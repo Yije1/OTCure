@@ -263,7 +263,7 @@ else:
                         label=f"'{med.name}' 상세 정보 및 복용법 검색",
                         url=med.url,
                         help=f"새 탭에서 '{med.name}'에 대한 구글 검색 결과를 엽니다.",
-                        type="primary"  # 버튼을 강조하여 잘 보이게 합니다.
+                        type="secondary" # 버튼을 강조하여 잘 보이게 합니다.
                     )
                     
             
