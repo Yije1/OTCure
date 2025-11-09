@@ -1,5 +1,15 @@
 import streamlit as st
+from datetime import datetime, date
 from collections import defaultdict
+
+
+# 1. 성분별 일일 최대 복용량 데이터베이스 추가 (mg)
+MAX_DOSE_DB = {
+    "아세트아미노펜": 4000,  # mg
+    "이부프로펜": 3200,      # mg
+    "세티리진염산염": 10,     # mg
+    "나프록센": 1250
+}
 
 # 1. 의약품 정보를 관리하는 클래스 정의
 class Medication:
@@ -140,9 +150,166 @@ def check_custom_warnings(selected_med_names, med_db):
 
  # --- Streamlit 웹 애플리케이션 UI 구성 ---
 
-st.set_page_config(page_title="의약품 사용 관리", page_icon="💊")
-st.title("💊 의약품 사용 관리")
+
+# 복용 기록 저장 함수 정의
+def save_medication_log(selected_names, log_time_val, log_desc_val, med_db, max_dose_db):
+    """선택된 약물을 기록하고 일일 최대 복용량을 검사합니다."""
+    
+    new_entry = {
+        "time": log_time_val.strftime("%H:%M"),
+        "description": log_desc_val if log_desc_val else "기록 없음",
+        "medications": [med_db[name] for name in selected_names],
+        "date": date.today().strftime("%Y-%m-%d")
+    }
+    
+    # 1. 일일 누적 복용량 계산 (오늘 기록 + 새로운 기록)
+    daily_cumulative_ingredients = defaultdict(float)
+    
+    for log in st.session_state['medication_log'] + [new_entry]:
+        if log["date"] == date.today().strftime("%Y-%m-%d"):
+            for med in log["medications"]:
+                for ing, amount in med.ingredients.items():
+                    daily_cumulative_ingredients[ing] += amount
+
+    # 2. 경고 확인
+    dose_warning_triggered = False
+    warning_messages = []
+    
+    # 현재 복용량 정보 출력
+    st.markdown("##### 📝 이번 복용 후 **오늘의 누적 섭취량**")
+    
+    for ing, total_amount in daily_cumulative_ingredients.items():
+        max_dose = max_dose_db.get(ing)
+        
+        if max_dose and total_amount > max_dose:
+            warning_messages.append(
+                f"**{ing}** 성분: 현재 복용량 **{total_amount}mg** (최대 권장량 **{max_dose}mg**)"
+            )
+            dose_warning_triggered = True
+            st.markdown(f"- **{ing}**: **{total_amount:.1f}mg** (최대 {max_dose}mg) - 🚨 **초과**")
+        else:
+             st.markdown(f"- **{ing}**: {total_amount:.1f}mg (최대 {max_dose if max_dose else 'N/A'}mg)")
+
+
+    # 3. 결과 저장 및 경고 출력
+    st.markdown("---")
+    if not dose_warning_triggered:
+        st.session_state['medication_log'].append(new_entry)
+        st.success("✅ 복용 기록이 성공적으로 저장되었습니다. 사이드바에서 확인하세요.")
+        st.rerun() 
+    else:
+        st.error("⚠️ **일일 최대 복용량 초과 경고!** 기록이 저장되지 않았습니다. 복용량을 확인해 주세요.")
+        for msg in warning_messages:
+             st.markdown(f"- {msg}")
+
+
+# --- 1. 세션 상태 초기화 ---
+if 'profile_complete' not in st.session_state:
+    st.session_state['profile_complete'] = False
+if 'user_profile' not in st.session_state:
+    st.session_state['user_profile'] = {}
+###################################################
+if 'medication_log' not in st.session_state:
+    st.session_state['medication_log'] = []
+######################################################
+
+
+st.set_page_config(page_title="OTCure", page_icon="💊")
+
+# 2. 프로필 입력 로직
+if not st.session_state['profile_complete']:
+    
+    st.title("👤 사용자 프로필 입력")
+    st.markdown("약물 상호작용 및 안전성 검토를 위해 사용자 정보를 입력해 주세요.")
+
+    # 1. 사용자 입력 필드를 먼저 정의 (st.form 외부에 정의하여 상태 변화를 감지)
+    user_name = st.text_input("이름", key='input_name')
+    
+    col_age, col_gender = st.columns(2)
+    with col_age:
+        user_age = st.number_input("나이", min_value=1, max_value=120, value=30, step=1, key='input_age')
+    with col_gender:
+        # 이 selectbox의 선택을 Streamlit이 즉시 감지합니다.
+        user_gender = st.selectbox("성별", ["선택 안 함", "남성", "여성", "기타"], key='input_gender')
+    
+    # 2. 임신 여부 필드를 조건부로 표시 (st.form 외부에서 성별 상태를 확인)
+    user_pregnant = "해당 없음"
+    # st.session_state['input_gender']는 selectbox의 현재 값을 즉시 반영합니다.
+    if st.session_state.get('input_gender') == "여성":
+        st.markdown("---") # 시각적 구분
+        st.subheader("추가 정보")
+        user_pregnant = st.selectbox(
+            "임신 여부", 
+            ["해당 없음", "임신 중", "수유 중"], 
+            key='input_pregnant'
+        )
+
+    # 3. Form을 사용하여 제출 버튼만 그룹화
+    with st.form(key='profile_form'):
+        st.write("⬆️ 위 정보를 확인하고 저장합니다.")
+        submit_button = st.form_submit_button(label='프로필 저장 및 시작')
+
+    if submit_button:
+        # st.session_state에서 최신 값을 가져옵니다.
+        final_gender = st.session_state.get('input_gender', '선택 안 함')
+        final_pregnant = st.session_state.get('input_pregnant', '해당 없음')
+        
+        if not st.session_state.get('input_name'):
+            st.error("이름을 입력해주세요.")
+        elif final_gender == "선택 안 함":
+             st.error("성별을 선택해주세요.")
+        else:
+            # 최종 데이터 저장
+            st.session_state['user_profile'] = {
+                'name': st.session_state.get('input_name'),
+                'age': st.session_state.get('input_age'),
+                'gender': final_gender,
+                'pregnant': final_pregnant 
+            }
+            st.session_state['profile_complete'] = True
+            st.success("프로필이 저장되었습니다. 잠시 후 앱을 시작합니다.")
+            
+            st.rerun()
+            
+    st.stop()
+
+
+st.title("💊 OTCure")
 st.write("복용하려는 약물을 선택하면, 성분별 총 섭취량과 약물별 상세 정보를 확인합니다.")
+
+
+profile = st.session_state['user_profile']
+st.sidebar.info(
+    f"**{profile['name']}**님 프로필:\n"
+    f"나이: {profile['age']}세, 성별: {profile['gender']}"
+)
+
+# 사이드바 복용 기록 누적 출력 
+st.sidebar.markdown("---")
+st.sidebar.subheader("📅 오늘의 복용 기록")
+
+if st.session_state['medication_log']:
+    for entry in reversed(st.session_state['medication_log']):
+        if entry["date"] == date.today().strftime("%Y-%m-%d"):
+            header_text = f"**[{entry['time']}] {entry['description']}**"
+            
+            with st.sidebar.expander(header_text):
+                st.caption("복용 성분량:")
+                total_ing = defaultdict(float)
+                for med in entry["medications"]:
+                    for ing, amount in med.ingredients.items():
+                        total_ing[ing] += amount
+                        
+                ing_list = [f"- **{ing}**: {amount} mg" for ing, amount in total_ing.items()]
+                st.markdown("\n".join(ing_list))
+                
+                st.caption("복용 약물:")
+                med_list = [med.name for med in entry["medications"]]
+                st.markdown("- " + "\n- ".join(med_list))
+else:
+    st.sidebar.caption("오늘 기록된 복용 기록이 없습니다.")
+
+
 
 # 3. 약물 선택 UI (체크박스)
 st.subheader("💊 복용할 약물을 선택하세요 (1회 복용 기준):")
@@ -165,7 +332,7 @@ with col2:
 if not selected_med_names:
     st.info("목록에서 약물을 선택해주세요.")
 else:
-    # 5. 구조화된 경고 로직 호출
+    # 5. 구조화된 경고 로직 호출 (즉시 출력)
     check_custom_warnings(selected_med_names, MED_DB) 
 
 # 5. 선택된 약물 정보 처리 및 성분 분석
@@ -204,7 +371,8 @@ else:
         st.markdown("\n".join(duplicate_list))
     
     st.markdown("---")    
-
+    
+    
     # 7. 총 성분 섭취량 결과 표시
     st.subheader("🧪 성분별 총 섭취량 (1회분 기준)")
     if not total_ingredients:
@@ -274,6 +442,36 @@ else:
         col_index = 1 - col_index # 간단하게 0과 1을 토글합니다.
 
 
+# 복용 기록 저장 폼
+    st.markdown("---")
+    st.subheader("📝 복용 기록 저장하기")
+    st.write(f"선택된 약물 **({len(selected_med_names)}개)**의 복용 시간과 간단한 설명을 기록합니다. 저장 시 일일 최대 복용량을 검사합니다.")
+    
+    with st.form(key='log_form', clear_on_submit=True):
+        col_time, col_desc = st.columns([1, 2])
+        
+        with col_time:
+            now = datetime.now().time()
+            log_time_input = st.time_input("복용 시간", value=now, key='log_time') 
+
+        with col_desc:
+            log_description_input = st.text_input( 
+                "간단 설명 (예: 두통 심해서, 식후)",
+                key='log_description'
+            )
+            
+        log_button = st.form_submit_button(label=f"✅ 선택된 {len(selected_med_names)}개 약물 복용 기록 저장")
+        
+    if log_button:
+        # 복용 기록 저장 함수 호출
+        save_medication_log(
+            selected_med_names, 
+            st.session_state['log_time'], 
+            st.session_state['log_description'], 
+            MED_DB, 
+            MAX_DOSE_DB
+        )
+
 
 
 # --- 앱 하단에 주의사항 추가 ---
@@ -311,3 +509,10 @@ with col3:
     )
 
 st.markdown("---")
+
+st.link_button(
+        label="주변약국찾기",
+        url="https://map.naver.com/p/search/%EC%95%BD%EA%B5%AD?c=15.00,0,0,0,dh",
+        type="secondary",
+        use_container_width=True
+    )
