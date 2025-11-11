@@ -5,9 +5,9 @@ from collections import defaultdict
 
 # 1. 성분별 일일 최대 복용량 데이터베이스 추가 (mg)
 MAX_DOSE_DB = {
-    "아세트아미노펜": 4000,  # mg
-    "이부프로펜": 3200,      # mg
-    "세티리진염산염": 10,     # mg
+    "아세트아미노펜": 4000, 
+    "이부프로펜": 3200,      
+    "세티리진염산염": 10,    
     "나프록센": 1250
 }
 
@@ -16,66 +16,365 @@ class Medication:
     """
     약물의 분류 정보(class_type)와 작용 그룹(effect_group)을 포함하는 클래스
     """
-    def __init__(self, name, description, usage, ingredients, class_type, effect_group, url):
+    def __init__(self, name, description, usage, ingredients, class_type, effect_group, preg, caffe, age, url):
         self.name = name
         self.description = description
         self.usage = usage
         self.ingredients = ingredients
         self.class_type = class_type  # 예: "진통제", "감기약", "소화제"
         self.effect_group = effect_group # 예: "Acetaminophen", "Ibuprofen", "Antihistamine"
+        self.preg = preg
+        self.caffe = caffe
+        self.age = age
         self.url = url
 
 # 2. 약물 데이터베이스
 MED_DB = {
-    "타이레놀 500mg": Medication(
-        name="타이레놀 500mg",
+    "타이레놀500mg": Medication(
+        name="타이레놀500mg",
         description="해열 및 진통 효과가 있는 약물입니다.",
-        usage="성인 기준 1회 1-2정 (4-6시간 간격), 1일 최대 8정",
-        ingredients={'아세트아미노펜': 500},
-        class_type="진통제",
+        usage="만 12세 이상 소아 및 성인: 1회 1-2정 (4-6시간 간격), 1일 최대 8정",
+        ingredients={
+            '아세트아미노펜': 500
+            },
+        class_type="해열진통제",
         effect_group="Acetaminophen",
+        preg = 0,
+        caffe = 0,
+        age = 0,
         url = "https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2021082400002"
     ),
+    "판콜에스내복액": Medication(
+        name="판콜에스내복액",
+        description="감기로 인한 여러 증상(콧물, 코막힘, 재채기, 기침, 가래, 두통, 발열 등)을 완화하는 종합감기약입니다.",
+        usage="성인 기준 1회 30 mL(1병), 1일 3회 식후 복용",
+        ingredients={
+            '아세트아미노펜': 300,
+            'DL‑메틸에페드린염산염': 17.5,
+            '클로르페니라민말레산염': 2.5,
+            '카페인무수물': 30,
+            '구아이페네신': 83.3
+        },
+        class_type="감기약",
+        effect_group="Acetaminophen",
+        preg = 0,
+        caffe = 1,
+        age = 0,
+        url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=A11A0570A0353"
+    ),
+
     "부루펜 정 200mg": Medication(
-        name="부루펜 정 200mg",
+        name="부루펜정200mg",
         description="해열, 진통 및 소염 작용을 하는 비스테로이드성 소염진통제입니다.",
         usage="성인 기준 1회 1-2정 (200-400mg), 1일 3-4회",
-        ingredients={'이부프로펜': 200},
-        class_type="진통제/소염제",
+        ingredients={
+            '이부프로펜': 200
+        },
+        class_type="소염진통제",
         effect_group="Ibuprofen",
+        preg = 2,
+        caffe = 0,
+        age = 1,
         url = "https://www.health.kr/searchDrug/result_drug.asp?drug_cd=A11A0500A0097"
     ),
-    "지르텍 정": Medication(
-        name="지르텍 정",
+    "지르텍정": Medication(
+        name="지르텍정",
         description="알레르기성 비염, 피부염 등 알레르기 증상 완화에 사용됩니다.",
         usage="성인 기준 1일 1회 1정(10mg) 취침 전 복용",
-        ingredients={'세티리진염산염': 10},
-        class_type="알레르기약",
+        ingredients={
+            '세티리진염산염': 10
+        },
+        class_type="항히스타민제",
         effect_group="Antihistamine",
+        preg = 0,
+        caffe = 0,
+        age = 1,
         url = "https://www.health.kr/searchDrug/result_drug.asp?drug_cd=A11ABBBBB2527"
     ),
-    "훼스탈 플러스 정": Medication(
-        name="훼스탈 플러스 정",
+    "훼스탈플러스정": Medication(
+        name="훼스탈플러스정",
         description="소화 불량 증상(과식, 체함)을 완화하는 소화제입니다.",
-        usage="성인 기준 1회 1-2정, 1일 3회 식후 복용",
-        ingredients={'판크레아틴': 150, '셀룰라제': 50, '우르소데옥시콜산': 10},
+        usage="성인 기준 1회 1정, 1일 3회 식후 복용",
+        ingredients={
+            '판크레아틴': 315, 
+            '셀룰라제': 10, 
+            '우르소데옥시콜산': 10, 
+            '시메티콘': 30
+        },
         class_type="소화제",
         effect_group="DigestiveEnzyme",
+        preg = 0,
+        caffe = 0,
+        age = 1,
         url = "https://www.health.kr/searchDrug/result_drug.asp?drug_cd=A11A0740B0009"
     ),
-    "타이레놀 콜드-에스 정": Medication(
-        name="타이레놀 콜드-에스 정",
+    "타이레놀콜드에스정": Medication(
+        name="타이레놀콜드에스정",
         description="종합 감기약 (콧물, 코막힘, 재채기, 두통, 발열 등)",
         usage="성인 기준 1회 1정, 1일 3회 식후 30분",
         ingredients={
-            '아세트아미노펜': 300, 
+            '아세트아미노펜': 325, 
             '슈도에페드린염산염': 30, 
-            '클로르페니라민말레산염': 2
+            '클로르페니라민말레산염': 2,
+            '덱스트로메토르판브롬화수소산염수화물': 15
         },
         class_type="감기약",
-        effect_group="Cold_Multi",
+        effect_group="슈도에페드린산염, 아세트아미노펜",
+        preg = 2,
+        caffe = 0,
+        age = 0,
         url = "https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2021101800010"
+    ),
+    "판피린큐액": Medication(
+        name="판피린큐액",
+        description="감기의 여러 증상(콧물, 코막힘, 재채기, 인후통, 기침, 가래, 오한, 발열, 관절통, 두통, 근육통)을 완화하는 종합감기약입니다.",
+        usage="성인 1회 20 mL, 1일 3회 식후 30분 복용.",
+        ingredients={
+            '아세트아미노펜': 300,   # mg per 20mL :contentReference[oaicite:1]{index=1}
+            'DL‑메틸에페드린염산염': 18,  # mg per 20mL :contentReference[oaicite:2]{index=2}
+            '구아이페네신': 42,  # mg per 20mL :contentReference[oaicite:3]{index=3}
+            '티페피딘시트르산염': 10,  # mg per 20mL :contentReference[oaicite:4]{index=4}
+            '카페인무수물': 30,  # mg per 20mL :contentReference[oaicite:5]{index=5}
+            '클로르페니라민말레산염': 2.5  # mg per 20mL :contentReference[oaicite:6]{index=6}
+        },
+        class_type="감기약",
+        effect_group="아세트아미노펜",
+        preg = 1,
+        caffe = 0,
+        age = 0,
+        url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=A11AKP08F0397"
+    ),
+    "탁센 연질캡슐": Medication(
+        name="탁센 연질캡슐",
+        description="진통·소염 작용을 하는 일반의약품으로, 두통·근육통·생리통 등 통증 완화에 사용됩니다.",
+        usage="성인 기준 1회 1정, 필요 시 1일 여러 회 복용 가능하나 복용간격 등은 약사 상담 필수.",
+        ingredients={
+            '나프록센': 250
+            },  # mg per 캡슐 :contentReference[oaicite:8]{index=8}
+        class_type="소염진통제",
+        effect_group="Naproxen",
+        preg = 2,
+        caffe = 0,
+        age = 1,
+        url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=4mmn5udgx7cjw"
+    ),
+    "돌코락스에스장용정": Medication(
+        name="돌코락스‑에스장용정",
+        description="간헐성 변비 증상의 완화를 위한 자극성 완하제입니다. 밤사이 배변을 유도하는 작용이 있습니다.",
+        usage="성인 및 만 15세 이상은 1회 1-2정 적절한 물과 함께 복용. 씹지 않고 삼킵니다.",
+        ingredients={
+            '비사코딜': 5,  # mg per 정제 :contentReference[oaicite:18]{index=18}
+            '도큐세이트나트륨': 16.75  # mg per 정제 :contentReference[oaicite:19]{index=19}
+        },
+        class_type="변비약",
+        effect_group="Laxative_Stimulant",
+        preg = 2,
+        caffe = 0,
+        age = 0,
+        url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2009092300055"
+    ),
+    "이지엔6이브연질캡슐": Medication(
+        name="이지엔6이브연질캡슐",
+        description="생리통·두통·치통·근육통 등에 사용되는 진통제입니다.",
+        usage="성인 및 만 15세 이상: 1회 1-2캡슐, 1일 1-3회 복용. 복용간격은 최소 4시간 이상. 공복을 피해서 복용.",
+        ingredients={
+            '이부프로펜': 200,
+            '파마브롬': 25
+        },
+        class_type="소염진통제",
+        effect_group="Ibuprofen",
+        preg = 2,
+        caffe = 0,
+        age = 1,
+        url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2013011800015"
+    ),
+    "게보린정": Medication(
+        name="게보린정",
+        description="해열 및 진통 작용을 가진 복합 진통제입니다. 두통, 발열, 신경통, 근육통 등에 사용됩니다. :contentReference[oaicite:3]{index=3}",
+        usage="성인 기준 1회 1정, 필요 시 4시간 이상 간격을 두고 복용. 공복을 피해 복용. :contentReference[oaicite:4]{index=4}",
+        ingredients={
+            '아세트아미노펜': 300, 
+            '이소프로필안티피린': 150, 
+            '카페인무수물': 50
+        },  # mg per 정. :contentReference[oaicite:5]{index=5}
+        class_type="해열진통제",
+        effect_group="Acetaminophen",
+        preg = 2,
+        caffe = 0,
+        age = 0,
+        url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=A11A1270A0060"
     )
+    # "타이레놀8시간이알서방정": Medication(
+    #     name="타이레놀8시간이알서방정",
+    #     description="해열 및 진통 작용을 하는 서방형 아세트아미노펜 제제로, 통증이 오래 지속될 때 사용됩니다.",
+    #     usage="성인 기준 아세트아미노펜으로서 1회 650mg 복용(서방정 1정 기준)이며, 1일 최대 복용량을 초과하지 않도록 주의하세요. :contentReference[oaicite:0]{index=0}",
+    #     ingredients={'아세트아미노펜': 650},  # mg per 정 :contentReference[oaicite:1]{index=1}
+    #     class_type="진통제/해열제",
+    #     effect_group="Acetaminophen",
+    #     url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2022020300026"
+    # ),
+    # "코메키나캡슐": Medication(
+    #     name="코메키나캡슐",
+    #     description="비염(코감기 포함), 부비강염 등에 의한 코막힘·콧물·재채기 등의 증상을 완화하는 복합 비염치료제입니다.",
+    #     usage="성인(15세 이상) 기준 1회 1캡슐, 1일 3회 식후 복용. 복용간격은 최소 4시간 이상. :contentReference[oaicite:2]{index=2}",
+    #     ingredients={
+    #         '벨라돈나총알칼로이드': 0.13,  # mg :contentReference[oaicite:3]{index=3}
+    #         '슈도에페드린염산염': 25,  # mg :contentReference[oaicite:4]{index=4}
+    #         '카페인무수물': 50,  # mg :contentReference[oaicite:5]{index=5}
+    #         '메퀴타진': 1.33,  # mg :contentReference[oaicite:6]{index=6}
+    #         '글리시리진산이칼륨': 20  # mg :contentReference[oaicite:7]{index=7}
+    #     },
+    #     class_type="비염치료제(복합제)",
+    #     effect_group="Allergy/Cold_Combo",
+    #     url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2017072700010"
+    # ),
+    # "모드콜에스연질캡슐": Medication(
+    #     name="모드콜에스연질캡슐",
+    #     description="감기의 여러 증상(콧물, 코막힘, 기침, 가래, 발열, 두통, 근육통 등)을 완화하는 복합감기약입니다.",
+    #     usage="성인 및 만 15세 이상: 1회 2캡슐, 1일 3회 식후 30분 복용. 만 8세 이상~만 15세 미만: 1회 1캡슐, 1일 3회 식후 30분 복용. :contentReference[oaicite:8]{index=8}",
+    #     ingredients={
+    #         '아세트아미노펜': 200,  # mg :contentReference[oaicite:9]{index=9}
+    #         '클로르페니라민말레산염': 1.25,  # mg :contentReference[oaicite:10]{index=10}
+    #         '덱스트로메토르판브롬화수소산염': 8,  # mg :contentReference[oaicite:11]{index=11}
+    #         'DL‑메틸에페드린염산염': 12.5,  # mg :contentReference[oaicite:12]{index=12}
+    #         '구아이페네신': 41.6,  # mg :contentReference[oaicite:13]{index=13}
+    #         '슈도에페드린염산염': 15  # mg :contentReference[oaicite:14]{index=14}
+    #     },
+    #     class_type="감기약(복합제)",
+    #     effect_group="Cold_Multi",
+    #     url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2012050900002"
+    # ),
+    # "탁센레이디연질캡슐": Medication(
+    #     name="탁센레이디연질캡슐",
+    #     description="생리통을 포함한 각종 통증 및 발열, 붓기, 속쓰림 증상을 완화하도록 고안된 일반의약품 소염진통제 복합제입니다.",
+    #     usage="만 15세 이상 및 성인: 1일 1~3회, 1회 1~2캡슐. 단, 공복 복용을 피해야 함. :contentReference[oaicite:15]{index=15}",
+    #     ingredients={
+    #         '이부프로펜': 200,  # mg :contentReference[oaicite:16]{index=16}
+    #         '파마브롬': 25,  # mg :contentReference[oaicite:17]{index=17}
+    #         '산화마그네슘': 83  # mg (마그네슘으로서 50.05mg) :contentReference[oaicite:18]{index=18}
+    #     },
+    #     class_type="소염진통제/복합제",
+    #     effect_group="NSAID_Combo",
+    #     url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2021110500006"
+    # ),
+    # "이지엔6프로연질캡슐": Medication(
+    #     name="이지엔6프로연질캡슐",
+    #     description="통증 및 염증, 발열을 수반하는 여러 질환(감염, 관절염 등)에 사용되는 진통·소염제입니다.",
+    #     usage="성인 기준 1회 300mg(덱시부프로펜 기준), 1일 2~4회 복용. 단, 1일 1,200mg을 초과하지 않아야 합니다. :contentReference[oaicite:19]{index=19}",
+    #     ingredients={'덱시부프로펜': 300},  # mg per 캡슐 :contentReference[oaicite:20]{index=20}
+    #     class_type="진통제/소염제 (NSAID)",
+    #     effect_group="Dexibuprofen",
+    #     url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=A11AOOOOO7737"
+    # ),
+    # "콜대원콜드큐시럽": Medication(
+    #     name="콜대원콜드큐시럽",
+    #     description="감기의 제증상(콧물, 코막힘, 재채기, 인후통, 기침, 가래, 오한, 발열, 두통, 관절통, 근육통) 완화를 위한 종합감기약 시럽제입니다.",
+    #     usage="성인 및 만 15세 이상: 1회 1포(20 mL), 1일 3회 식후 30분 복용. 복용간격은 최소 4시간 이상. :contentReference[oaicite:0]{index=0}",
+    #     ingredients={
+    #         '아세트아미노펜': 325,     # mg per 1포20mL :contentReference[oaicite:1]{index=1}
+    #         '카페인무수물': 25,       # mg per 1포20mL :contentReference[oaicite:2]{index=2}
+    #         '덱스트로메토르판브롬화수소산염수화물': 16,  # mg per 1포20mL :contentReference[oaicite:3]{index=3}
+    #         'DL‑메틸에페드린염산염': 21,  # mg per 1포20mL :contentReference[oaicite:4]{index=4}
+    #         '구아이페네신': 83,       # mg per 1포20mL :contentReference[oaicite:5]{index=5}
+    #         '클로르페니라민말레산염': 2.5 # mg per 1포20mL :contentReference[oaicite:6]{index=6}
+    #     },
+    #     class_type="감기약(복합제)",
+    #     effect_group="Cold_Multi",
+    #     url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2021070200002"
+    # ),
+    # "콜대원노즈큐에스시럽": Medication(
+    #     name="콜대원 노즈큐에스시럽",
+    #     description="콧물, 코막힘, 재채기 등의 증상을 중심으로 한 코감기 증상 완화를 위한 일반의약품 시럽제입니다.",
+    #     usage="제품 라벨 참조 (1회 복용량 및 1일 복용횟수 연령별 상이) ※ 일반적으로 1회 20 mL 복용이 많음. :contentReference[oaicite:15]{index=15}",
+    #     ingredients={
+    #         '아세트아미노펜': 325,     # mg per 1포20mL :contentReference[oaicite:1]{index=1}
+    #         '카페인무수물': 25,   
+    #         '클로르페니라민말레산염': 2.5,
+    #         '구아이페네신': 42,
+    #         '슈도에페드린염산염': 30
+    #     },  
+    #     class_type="코감기약(복합제)",
+    #     effect_group="Cold_Nose_Combo",
+    #     url=""
+    # ),
+    # "멜리안정": Medication(
+    #     name="멜리안정",
+    #     description="여성용 피임약으로, 저용량 에스트로겐 및 3세대 프로게스틴을 포함한 경구피임제입니다.",
+    #     usage="성인 여성 기준 1일 1정씩 일정시간에 복용. (21일 복용 후 7일 휴약) :contentReference[oaicite:16]{index=16}",
+    #     ingredients={
+    #         '에티닐에스트라디올': 0.02,  # mg per 정 :contentReference[oaicite:17]{index=17}
+    #         '게스토덴': 0.075               # mg per 정 :contentReference[oaicite:18]{index=18}
+    #     },
+    #     class_type="경구피임약",
+    #     effect_group="Oral_Contraceptive",
+    #     url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=A11AKP08G3641"
+    # ),
+    # "트리싹200mg": Medication(
+    #     name="트리싹200mg",
+    #     description="기능성 소화불량, 과민성대장증후군, 위십이지장염 및 식도역류증상 등 위장관 운동조절제로 사용됩니다.",
+    #     usage="성인 및 만 15세 이상: 1회 200 mg, 1일 3회 식전에 복용. 증상 및 연령에 따라 적절히 증감. :contentReference[oaicite:19]{index=19}",
+    #     ingredients={
+    #         '트리메부틴말레산염': 200
+    #     },  # mg per 정 :contentReference[oaicite:20]{index=20}
+    #     class_type="위장관운동촉진제",
+    #     effect_group="Gastro_Motility",
+    #     url="https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2019102800004"
+    # ),
+    # "콜대원 코프큐시럽": Medication(
+    #     name = "콜대원 코프큐시럽",
+    #     description = "기침, 가래, 발열, 두통 등 감기 증상을 완화하는 종합 감기약입니다.",
+    #     usage = "성인 기준 1회 10~20mL, 1일 3~4회 식후 복용",
+    #     ingredients = {
+    #         "아세트아미노펜": 200,
+    #         "덱스트로메토르판브롬화수소산염": 16,
+    #         "DL-메틸에페드린염산염": 21,
+    #         "구아이페네신": 83,
+    #         "카페인무수물": 25
+    #     },
+    #     class_type = "감기약(복합제)",
+    #     effect_group = "Cold_Multi",
+    #     url = "https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2021061700005"
+    # ),
+    # "메이킨큐장용정": Medication(
+    #     name = "메이킨큐장용정",
+    #     description = "장운동을 촉진하고 배변을 유도하는 변비 치료제입니다.",
+    #     usage = "성인 기준 1회 1~2정(취침 전 복용)",
+    #     ingredients = {
+    #         "비사코딜": 5,
+    #         "도큐세이트나트륨": 14,
+    #         "카산트라놀": 14,
+    #         "우르소데옥시콜산": 6
+    #     },
+    #     class_type = "변비약(자극성 완하제)",
+    #     effect_group = "Laxative",
+    #     url = "https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2014103100002"
+    # ),
+
+    # "챔프시럽": Medication(
+    #     name = "챔프시럽",
+    #     description = "어린이용 해열진통제. 감기나 발열, 통증 시 해열 목적으로 사용됩니다.",
+    #     usage = "체중 1kg당 10~15mg 기준으로 4~6시간 간격 복용 (1일 5회 이하)",
+    #     ingredients = {
+    #         "아세트아미노펜": 160  # per 5mL
+    #     },
+    #     class_type = "해열진통제(소아용)",
+    #     effect_group = "Acetaminophen",
+    #     url = "https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2012091000002"
+    # ),
+    # "겔포스엘현탁액": Medication(
+    #     name = "겔포스엘현탁액",
+    #     description = "위산과다, 속쓰림, 위통, 더부룩함을 완화하는 제산제입니다.",
+    #     usage = "성인 기준 1회 1포(20mL), 1일 3회 식후 또는 위통 시 복용",
+    #     ingredients = {
+    #         "인산알루미늄겔": 2500,
+    #         "수산화마그네슘": 20,
+    #         "시메티콘": 45,
+    #         "DL-카르니틴염산염":150
+    #     },
+    #     class_type = "제산제",
+    #     effect_group = "Antacid",
+    #     url = "https://www.health.kr/searchDrug/result_drug.asp?drug_cd=2017122900020"
+    # )
 }
 
 # 3. 경고 규칙 데이터 구조화
@@ -208,10 +507,8 @@ if 'profile_complete' not in st.session_state:
     st.session_state['profile_complete'] = False
 if 'user_profile' not in st.session_state:
     st.session_state['user_profile'] = {}
-###################################################
 if 'medication_log' not in st.session_state:
     st.session_state['medication_log'] = []
-######################################################
 
 
 st.set_page_config(page_title="OTCure", page_icon="💊")
@@ -220,7 +517,7 @@ st.set_page_config(page_title="OTCure", page_icon="💊")
 if not st.session_state['profile_complete']:
     
     st.title("👤 사용자 프로필 입력")
-    st.markdown("약물 상호작용 및 안전성 검토를 위해 사용자 정보를 입력해 주세요.")
+    st.markdown("사용자 정보를 입력해 주세요.")
 
     # 1. 사용자 입력 필드를 먼저 정의 (st.form 외부에 정의하여 상태 변화를 감지)
     user_name = st.text_input("이름", key='input_name')
@@ -230,7 +527,7 @@ if not st.session_state['profile_complete']:
         user_age = st.number_input("나이", min_value=1, max_value=120, value=30, step=1, key='input_age')
     with col_gender:
         # 이 selectbox의 선택을 Streamlit이 즉시 감지합니다.
-        user_gender = st.selectbox("성별", ["선택 안 함", "남성", "여성", "기타"], key='input_gender')
+        user_gender = st.selectbox("성별", ["선택 안 함", "남성", "여성"], key='input_gender')
     
     # 2. 임신 여부 필드를 조건부로 표시 (st.form 외부에서 성별 상태를 확인)
     user_pregnant = "해당 없음"
@@ -253,18 +550,20 @@ if not st.session_state['profile_complete']:
         # st.session_state에서 최신 값을 가져옵니다.
         final_gender = st.session_state.get('input_gender', '선택 안 함')
         final_pregnant = st.session_state.get('input_pregnant', '해당 없음')
-        
+        final_age = st.session_state.get('input_age', 0)   ###########################################
         if not st.session_state.get('input_name'):
             st.error("이름을 입력해주세요.")
         elif final_gender == "선택 안 함":
              st.error("성별을 선택해주세요.")
         else:
+            ageornot = "고령자" if final_age >= 60 else "일반" # 나이에 따라 고령자 여부 판별
             # 최종 데이터 저장
             st.session_state['user_profile'] = {
                 'name': st.session_state.get('input_name'),
                 'age': st.session_state.get('input_age'),
                 'gender': final_gender,
-                'pregnant': final_pregnant 
+                'pregnant': final_pregnant,
+                'ageornot': ageornot
             }
             st.session_state['profile_complete'] = True
             st.success("프로필이 저장되었습니다. 잠시 후 앱을 시작합니다.")
@@ -281,8 +580,10 @@ st.write("복용하려는 약물을 선택하면, 성분별 총 섭취량과 약
 profile = st.session_state['user_profile']
 st.sidebar.info(
     f"**{profile['name']}**님 프로필:\n"
-    f"나이: {profile['age']}세, 성별: {profile['gender']}"
+    f"나이: {profile['age']}세, 성별: {profile['gender']}\n"
+    f"임신여부: {profile['pregnant']}"
 )
+
 
 # 사이드바 복용 기록 누적 출력 
 st.sidebar.markdown("---")
